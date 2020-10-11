@@ -1,20 +1,11 @@
 // In App.js in a new project
 import * as React from 'react';
 import { TouchableOpacity, StyleSheet, Button, View, Text, Settings, SafeAreaView, FlatList, Image } from 'react-native';
-import { NavigationContainer, NavigationHelpersContext, useNavigationState } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { CardStyleInterpolators, createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Switch } from 'react-native-gesture-handler';
-
-//DB and network modules
-import SQLite from 'react-native-sqlite-storage';
-import RNFetchBlob from 'rn-fetch-blob';
-import NetInfo from "@react-native-community/netinfo";
-import { zip, unzip, unzipAssets, subscribe } from 'react-native-zip-archive'
-import RNFS from 'react-native-fs'
-
-import DownloadComponent from './components/downloadComponent'
 
 const lpColor = "#3987e6";
 const lfColor = "#121212";
@@ -28,193 +19,21 @@ let pColor = dpColor;
 let fColor = dfColor;
 let bColor = dbColor;
 
-const Stack = createStackNavigator();
-
-var db;
-
-function App() {
-  
-    return (
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Update"
-          screenOptions={{
-            cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS
-          }}>
-          <Stack.Screen
-            name="Update"
-            component={UpdateScreen}
-            options={navOptions}
-            
-            style={styles.container}
-             />
-          <Stack.Screen name="Home" component={HomeScreen} options={navOptions} />
-          <Stack.Screen name="Details" component={DetailsScreen} options={navOptions} />
-          <Stack.Screen name="Settings" component={SettingsScreen} options={navOptions} />
-          <Stack.Screen name="Results" component={ResultsScreen} options={navOptions} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    );
-  
-}
-
-export default App;
-
-
-
 //Set header options
-let navOptions = ({ navigation }) => ({
-
+let navOptions= ({ navigation }) => ({
   headerStyle: {
     backgroundColor: pColor,
   },
   headerTintColor: "white",
   headerRight: () => (
     <TouchableOpacity
-      onPress={() => navigation.navigate('Settings')}>
+    onPress={() => navigation.navigate('Settings')}>
       <Icon name="cog" size={30} color="blue" style={styles.cog}></Icon>
-    </TouchableOpacity>
+   </TouchableOpacity>
   ),
-   
 });
 
-//The following will download (rn-blob) the most current DB from the server
-//and load the DB using react-native-sqlite-storage for use of the front end
-function downloadCurrentDB(callback) {
-
-  let dirs = RNFetchBlob.fs.dirs;
-  console.log("Downloading DB");
-  let l = RNFetchBlob
-    .config({
-      // response data will be saved to this path if it has access right.
-      path: dirs.DocumentDir + '/images_v2.3.db'
-    })
-    .fetch('GET', 'http://10.51.32.171:8890/getDB', {
-      //some headers ..
-    })
-    .then((res) => {
-      // the path should be dirs.DocumentDir + 'path-to-file.anything'
-      console.log('The file saved to ', res.path());
-
-      console.log("DB copied to correct directory");
-      callback(true);
-      
-
-    })
-}
-function logNetworkDetails(callback) {
-
-    let l = NetInfo.fetch().then(state => {
-      
-    //console.log("Connection type", state.type);
-    //console.log("Is connected?", state.isConnected);
-
-    callback(state.type);
-  });
-
-}
-
-function checkConnectivity(callback) {
-  console.log("checking connectivity");
-  var done;
-  
-  let l = NetInfo.fetch().then(state => {
-
-      callback(state.isConnected);
-  });
-
-  
-}
-
-function queryDB(db, query) {
-  db.transaction((tx) => {
-    tx.executeSql(query, [], (tx, results) => {
-      console.log("Query completed");
-
-      // Get rows with Web SQL Database spec compliance.
-
-      var len = results.rows.length;
-      for (let i = 0; i < len; i++) {
-        let row = results.rows.item(i);
-        console.log(`image ${row.FileName}`);
-
-      }
-    });
-  });
-}
-
-
-
-function extractImages() {
-  console.log(`${RNFS.DocumentDirectoryPath}`);
-  unzip(`${RNFS.DocumentDirectoryPath}/images_all_in_one.zip`, 
-    RNFS.DocumentDirectoryPath, 'UTF-8')
-    .then((path) => {
-      console.log(`unzip completed at ${path}`);
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-}
-
-function UpdateScreen({navigation, route}) {
-//const [downloadProgress] = useState(0);
-
-
-  //Check connectivity and log connections details on callback
-  checkConnectivity((isConneceted) => {
-      if(isConneceted) {
-        logNetworkDetails((type) => {
-          console.log(type);
-
-          //download the current DB and all callback check
-          //the DB for new images, if there are new images 
-          //download the images.
-          downloadCurrentDB((done) => {
-            console.log("Download DB success: " + done);
-
-            //connect DB
-            db = SQLite.openDatabase({ name: "images_v2.3.db", createFromLocation: "/data/images_v2.3.db" });
-            //console.log(db);
-
-            //Do DB checking here
-            queryDB(db, 'SELECT * FROM IMAGE');
-            
-            //Download data
-
-            
-            
-          });
-        });
-        
-      }
-      else
-        console.log("No network");
-  })
-    //queryDB(db, 'SELECT * FROM IMAGE');
-
-    /*RNFetchBlob.fs.ls(RNFS.DocumentDirectoryPath).then(files => {
-      console.log(files);
-    }).catch(error => console.log(error))*/
-    var pr = 0;
-    //this.dl = DownloadComponent.bind(this)
-  return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        onPress={() => navigation.navigate('Home')}>
-        <Text style={styles.button}>Dev skip</Text>
-      </TouchableOpacity>
-
-    
-        <DownloadComponent />
-    </View>
-   
-  );
-    
-}
-
-
 function HomeScreen({ navigation }) {
-  
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -252,14 +71,14 @@ function DetailsScreen({ navigation }) {
       <Text style={styles.text}>Wavelength:</Text>
       <DropDownPicker
         items={[
-          { label: 'All', value: 'all' },
-          { label: '350nm', value: '350' },
+            {label: 'All', value: 'all'},
+            {label: '350nm', value: '350'},
         ]}
         defaultValue={wavlen}
         containerStyle={styles.dropdown}
         style={styles.innerDropdown}
         itemStyle={{
-          justifyContent: 'flex-start'
+            justifyContent: 'flex-start'
         }}
         labelStyle={styles.innerTextDropdown}
         arrowColor={fColor}
@@ -268,16 +87,16 @@ function DetailsScreen({ navigation }) {
       <Text style={styles.text}>Inteference:</Text>
       <DropDownPicker
         items={[
-          { label: 'All', value: 'all' },
-          { label: 'Orange', value: 'orange' },
-          { label: 'Yellow', value: 'yellow' },
-          { label: 'Red', value: 'red' },
+            {label: 'All', value: 'all'},
+            {label: 'Orange', value: 'orange'},
+            {label: 'Yellow', value: 'yellow'},
+            {label: 'Red', value: 'red'},
         ]}
         defaultValue={wavlen}
         containerStyle={styles.dropdown}
         style={styles.innerDropdown}
         itemStyle={{
-          justifyContent: 'flex-start'
+            justifyContent: 'flex-start'
         }}
         labelStyle={styles.innerTextDropdown}
         arrowColor={fColor}
@@ -286,16 +105,16 @@ function DetailsScreen({ navigation }) {
       <Text style={styles.text}>Substrate:</Text>
       <DropDownPicker
         items={[
-          { label: 'All', value: 'all' },
-          { label: 'Denim', value: 'denim' },
-          { label: 'Tile', value: 'tile' },
-          { label: 'Black', value: 'black' },
+            {label: 'All', value: 'all'},
+            {label: 'Denim', value: 'denim'},
+            {label: 'Tile', value: 'tile'},
+            {label: 'Black', value: 'black'},
         ]}
         defaultValue={wavlen}
         containerStyle={styles.dropdown}
         style={styles.innerDropdown}
         itemStyle={{
-          justifyContent: 'flex-start'
+            justifyContent: 'flex-start'
         }}
         labelStyle={styles.innerTextDropdown}
         arrowColor={fColor}
@@ -304,16 +123,16 @@ function DetailsScreen({ navigation }) {
       <Text style={styles.text}>Substance:</Text>
       <DropDownPicker
         items={[
-          { label: 'All', value: 'all' },
-          { label: 'Apple Juice', value: 'Apple Juice' },
-          { label: 'Urine', value: 'Urine' },
-          { label: 'Toothpaste', value: 'Toothpaste' },
+            {label: 'All', value: 'all'},
+            {label: 'Apple Juice', value: 'Apple Juice'},
+            {label: 'Urine', value: 'Urine'},
+            {label: 'Toothpaste', value: 'Toothpaste'},
         ]}
         defaultValue={wavlen}
         containerStyle={styles.dropdown}
         style={styles.innerDropdown}
         itemStyle={{
-          justifyContent: 'flex-start'
+            justifyContent: 'flex-start'
         }}
         labelStyle={styles.innerTextDropdown}
         arrowColor={fColor}
@@ -325,7 +144,7 @@ function DetailsScreen({ navigation }) {
           <Text style={styles.button}>Search</Text>
         </TouchableOpacity>
       </View>
-
+      
     </View>
   );
 }
@@ -344,10 +163,10 @@ function ResultsScreen({ navigation }) {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container}>
       <FlatList
         data={dataSource}
-        renderItem={({ item }) => (
+        renderItem={({item}) => (
           <View
             style={{
               flex: 1,
@@ -356,7 +175,7 @@ function ResultsScreen({ navigation }) {
             }}>
             <Image
               style={styles.imageThumbnail}
-              source={{ uri: item.src }}
+              source={{uri: item.src}}
             />
           </View>
         )}
@@ -370,6 +189,28 @@ function ResultsScreen({ navigation }) {
 }
 
 
+const Stack = createStackNavigator();
+
+function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home"
+      screenOptions={{
+        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS
+      }}>
+        <Stack.Screen 
+        name="Home" 
+        component={HomeScreen}
+        options={navOptions}
+        style={styles.container} />
+        <Stack.Screen name="Details" component={DetailsScreen} options={navOptions} />
+        <Stack.Screen name="Settings" component={SettingsScreen} options={navOptions} />
+        <Stack.Screen name="Results" component={ResultsScreen} options={navOptions} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -379,7 +220,7 @@ const styles = StyleSheet.create({
   text: {
     color: fColor,
     margin: 5,
-    fontSize: 15,
+    fontSize:15,
     marginLeft: 10,
     marginRight: 10,
   },
@@ -405,7 +246,7 @@ const styles = StyleSheet.create({
   },
   inlineSet: {
     flexDirection: 'row'
-  },
+  }, 
   dropdown: {
     marginLeft: 10,
     marginRight: 10,
@@ -436,3 +277,4 @@ const styles = StyleSheet.create({
   },
 })
 
+export default App;
